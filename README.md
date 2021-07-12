@@ -9,7 +9,7 @@ A program that replaces all words in a given text with synonyms.
 Allows certain words like "a" and "it" from being converted due to abbreviations.
 Currently does not use context to determine synonym choice.
 Whether this is a feature or flaw depends greatly on what the user wants to accomplish.
-I personally love using this to make silly sentences, so the later is preferred.
+I personally love using this to make silly sentences, so the latter is preferred.
 There is also an antonym mode where it attempts to find an antonym for every word in the sentence.
 This is typically more successful due to less options being available to choose from.
 
