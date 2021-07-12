@@ -1,0 +1,16 @@
+I love eating lots of bugs.
+Bugs are tasty and large ones are especially good.
+Cake is also great, but occasionally I find that bugs are better.
+The wings are the best part, but often times I just need an example text for the program I'm writing.
+
+See that? A blank line! This is to make it harder for me.
+
+Oops,, a textual error? "I couldn't imagine how that could happen" said Oren the mediocre programmer.
+
+Despite these mistakes, it should work. That's what I say it should do at least, or what they say it should be.
+
+If everything works this will be completely incomprehensible.
+
+I need to fix sentence capitalization and "an" and "a" because it'll change the word and cause bad grammar. Low priority right now, going to try to make a user interface for people like you.
+
+DÉJÀ VU ALERT. This must be the first time reading this. If this feels similar, immediately talk to a faculty member.
