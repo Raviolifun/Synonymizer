@@ -19,6 +19,11 @@ Additionally, I plan to add a picking mode for how well the synonym matches in c
 Current development is going towards a gui interface in qt with fbs as a installer.
 <br/><br/>
 
+#### Lesson's Learned
+- Do everything using the venv created by PyCharm, it is much easier
+- You must use python 3.5 or 3.6 when using the non-payed version of fbs
+<br/><br/>
+
 #### Links useful during dev:
 https://doc.qt.io/qt-5/qmlfirststeps.html <br/>
 https://github.com/mherrmann/fbs-tutorial <br/>

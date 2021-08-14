@@ -18,7 +18,7 @@ def synoantonym_string(string_input, excluded_words, synonym):
     for i in range(len(words)):
         word = words[i]
 
-        special = ".?!\","
+        special = ".?!\",(){}[]"
         start_special = ""
         end_special = ""
         for char in word:
