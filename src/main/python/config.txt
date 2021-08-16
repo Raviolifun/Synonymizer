@@ -1,0 +1,1 @@
+ignored words = a an the i it as its no in

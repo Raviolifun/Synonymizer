@@ -10,15 +10,14 @@ from nltk.corpus import wordnet
 def download():
     nltk.download('popular')
 
-
 def synoantonym_string(string_input, excluded_words, synonym):
     similar = synonym
-    words = string_input.split()
+    words = string_input.split(' ')
 
     for i in range(len(words)):
         word = words[i]
 
-        special = ".?!\",(){}[]"
+        special = ".?!\",(){}[]\n"
         start_special = ""
         end_special = ""
         for char in word:

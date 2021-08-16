@@ -66,11 +66,14 @@ class ThesaurusPlusUi(QMainWindow):
         self.set_input_text('')
 
     def get_input_text(self):
-        return self.input_text.text()
+        return self.input_text.toPlainText()
 
     def set_output_text(self, text):
         self.output_text.setPlainText(text)
         self.output_text.setFocus()
+
+    def get_output_text(self):
+        return self.output_text.toPlainText()
 
 
 # Create a Controller class to connect the UI
@@ -83,26 +86,39 @@ class PyCalcCtrl:
 
     def _import_text(self):
         # open file dialog box, navigation starting at home directory
-        print("test2")
         home_dir = str(Path.home())
         file_name = QFileDialog.getOpenFileName(caption='Open Text File', directory=home_dir,
                                                 filter="txt files (*.txt *.docx)")
         file_name = file_name[0]
         if file_name is not '':
-            with open(file_name[0], "r") as fh:
-                self._view.set_input_text(fh.read())
+            with open(file_name, "r") as fh:
+                import_text = fh.read()
+                self._view.set_input_text(import_text)
 
     def _run_input(self):
-        print("test3")
         text_input = self._view.get_input_text()
         output = Sub_Functions.synoantonym_string(text_input, "a an the i it as its no in", True)
         self._view.set_output_text(output)
 
+    def _re_run_input(self):
+
+        # pop up dialog box with 20 as default value (something must be input, thing must be integer number)
+        # run button to run with whatever is in the box
+        # cancel button to exit out of dialog box (does not run)
+
+        number_of_runs = 20
+
+        output = self._view.get_input_text()
+        for i in range(number_of_runs):
+            output = Sub_Functions.synoantonym_string(output, "a an the i it as its no in", True)
+        self._view.set_output_text(output)
+
+    # def _edit_ignored_words
+
     def _connect_signals(self):
-        print(self._view.import_text)
-        self._view.run.clicked.connect(self._run_input)
-        self._view.re_running.clicked.connect(self._import_text)
-        self._view.import_text.clicked.connect(self._import_text)
+        self._view.run.clicked.connect(partial(self._run_input))
+        self._view.re_running.clicked.connect(partial(self._re_run_input))
+        self._view.import_text.clicked.connect(partial(self._import_text))
 
 
 # Client code
