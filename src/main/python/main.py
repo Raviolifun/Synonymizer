@@ -2,14 +2,17 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import *
 from PyQt5 import QtGui
 from functools import partial
+from src.main.python import Sub_Functions
+from pathlib import Path
 
 import sys
 
-__version__ = '0.1'
+__version__ = '1.0'
 __author__ = 'Oren Anderson'
 
+
 # Create a subclass of QMainWindow to setup the calculator's GUI
-class PyCalcUi(QMainWindow):
+class ThesaurusPlusUi(QMainWindow):
     """PyCalc's View (GUI)."""
     def __init__(self):
         """View initializer."""
@@ -20,23 +23,6 @@ class PyCalcUi(QMainWindow):
         self.setWindowIcon(QtGui.QIcon('..\\icons\\Phrog.ico'))
         self.setMinimumSize(700, 400)
 
-        # Set the central widget and the general layout
-        # Top Menu
-        top_menu = QWidget()
-        top_menu_layout = QHBoxLayout()
-        top_menu_layout.addWidget(QPushButton('Run'))
-        top_menu_layout.addWidget(QPushButton('Recycle'))
-        top_menu_layout.addWidget(QPushButton('Import'))
-        top_menu.setLayout(top_menu_layout)
-
-        # Main Layout
-        central_layout = QVBoxLayout()
-        central_layout.addWidget(top_menu)
-        central_layout.addWidget(QLabel('Input Text'))
-        central_layout.addWidget(QPlainTextEdit())
-        central_layout.addWidget(QLabel('Output Text'))
-        central_layout.addWidget(QPlainTextEdit())
-
         # Set Central Widget
         self._central_widget = QWidget(self)
         self.setCentralWidget(self._central_widget)
@@ -45,71 +31,78 @@ class PyCalcUi(QMainWindow):
         self._general_layout = QVBoxLayout()
         self._central_widget.setLayout(self._general_layout)
 
-        # Create the display and the buttons
+        # Create menu and the content/text fields
         self._create_menu()
         self._create_content()
 
     def _create_menu(self):
         self.top_menu_layout = QHBoxLayout()
-        self.top_menu_layout.addWidget(QPushButton('Run'))
-        self.top_menu_layout.addWidget(QPushButton('Recycle'))
-        self.top_menu_layout.addWidget(QPushButton('Import'))
         self._general_layout.addLayout(self.top_menu_layout)
+
+        self.run = QPushButton('Run')
+        self.top_menu_layout.addWidget(self.run)
+        self.re_running = QPushButton('Re-Running')
+        self.top_menu_layout.addWidget(self.re_running)
+        self.import_text = QPushButton('Import')
+        self.top_menu_layout.addWidget(self.import_text)
 
     def _create_content(self):
         self.primary_layout = QVBoxLayout()
-        self.primary_layout.addWidget(QLabel('Input Text'))
-        self.primary_layout.addWidget(QPlainTextEdit())
-        self.primary_layout.addWidget(QLabel('Output Text'))
-        self.primary_layout.addWidget(QPlainTextEdit())
         self._general_layout.addLayout(self.primary_layout)
 
-    # def setDisplayText(self, text):
-    #     """Set display's text."""
-    #     self.display.setText(text)
-    #     self.display.setFocus()
-    #
-    # def displayText(self):
-    #     """Get display's text."""
-    #     return self.display.text()
-    #
-    # def clearDisplay(self):
-    #     """Clear the display."""
-    #     self.setDisplayText('')
+        self.primary_layout.addWidget(QLabel('Input Text'))
+        self.input_text = QPlainTextEdit('Type text here or use the import button to import larger files')
+        self.primary_layout.addWidget(self.input_text)
+
+        self.primary_layout.addWidget(QLabel('Output Text'))
+        self.output_text = QPlainTextEdit()
+        self.primary_layout.addWidget(self.output_text)
+
+    def set_input_text(self, text):
+        self.input_text.setPlainText(text)
+        self.input_text.setFocus()
+
+    def clear_input_text(self):
+        self.set_input_text('')
+
+    def get_input_text(self):
+        return self.input_text.text()
+
+    def set_output_text(self, text):
+        self.output_text.setPlainText(text)
+        self.output_text.setFocus()
 
 
-# Create a Controller class to connect the GUI and the model
-# class PyCalcCtrl:
-#     """PyCalc's Controller."""
-#     def __init__(self, model, view):
-#         """Controller initializer."""
-#         self._evaluate = model
-#         self._view = view
-#         # Connect signals and slots
-#         self._connectSignals()
-#
-#     def _calculateResult(self):
-#         """Evaluate expressions."""
-#         result = self._evaluate(expression=self._view.displayText())
-#         self._view.setDisplayText(result)
-#
-#     def _buildExpression(self, sub_exp):
-#         """Build expression."""
-#         if self._view.displayText() == ERROR_MSG:
-#             self._view.clearDisplay()
-#
-#         expression = self._view.displayText() + sub_exp
-#         self._view.setDisplayText(expression)
-#
-#     def _connectSignals(self):
-#         """Connect signals and slots."""
-#         for btnText, btn in self._view.buttons.items():
-#             if btnText not in {'=', 'C'}:
-#                 btn.clicked.connect(partial(self._buildExpression, btnText))
-#
-#         self._view.buttons['='].clicked.connect(self._calculateResult)
-#         self._view.display.returnPressed.connect(self._calculateResult)
-#         self._view.buttons['C'].clicked.connect(self._view.clearDisplay)
+# Create a Controller class to connect the UI
+class PyCalcCtrl:
+    def __init__(self, view):
+        """Controller initializer."""
+        self._view = view
+        # Connect signals and slots
+        self._connect_signals()
+
+    def _import_text(self):
+        # open file dialog box, navigation starting at home directory
+        print("test2")
+        home_dir = str(Path.home())
+        file_name = QFileDialog.getOpenFileName(caption='Open Text File', directory=home_dir,
+                                                filter="txt files (*.txt *.docx)")
+        file_name = file_name[0]
+        if file_name is not '':
+            with open(file_name[0], "r") as fh:
+                self._view.set_input_text(fh.read())
+
+    def _run_input(self):
+        print("test3")
+        text_input = self._view.get_input_text()
+        output = Sub_Functions.synoantonym_string(text_input, "a an the i it as its no in", True)
+        self._view.set_output_text(output)
+
+    def _connect_signals(self):
+        print(self._view.import_text)
+        self._view.run.clicked.connect(self._run_input)
+        self._view.re_running.clicked.connect(self._import_text)
+        self._view.import_text.clicked.connect(self._import_text)
 
 
 # Client code
@@ -118,17 +111,21 @@ def main():
     # Create an instance of `QApplication`
     app = QApplication(sys.argv)
 
+    # Download or update language toolkit
+    Sub_Functions.download()
+
     # Load qss (qt equivalent of css)
     sshFile = "customLooks.qss"
     with open(sshFile, "r") as fh:
         app.setStyleSheet(fh.read())
 
     # Show the calculator's GUI
-    view = PyCalcUi()
+    view = ThesaurusPlusUi()
     view.show()
+
     # Create instances of the model and the controller
-    # model = evaluateExpression
-    # PyCalcCtrl(model=model, view=view)
+    PyCalcCtrl(view)
+
     # Execute calculator's main loop
     sys.exit(app.exec_())
 
