@@ -1,6 +1,6 @@
 from PyQt5.QtGui import QIntValidator
 from PyQt5.QtWidgets import *
-from PyQt5 import QtGui
+from PyQt5 import QtGui, QtCore
 from functools import partial
 from src.main.python import Sub_Functions
 from pathlib import Path
@@ -22,7 +22,8 @@ class ThesaurusPlusUi(QMainWindow):
         self.setMinimumSize(700, 400)
 
         # Initialize re-running dialog box popup
-        self.dialog_box = PopUpBox()
+        self.dialog_box = PopUpBoxReRun(self)
+        self.dialog_config = PopUpBoxConfig(self)
 
         # Set Central Widget
         self._central_widget = QWidget(self)
@@ -46,6 +47,8 @@ class ThesaurusPlusUi(QMainWindow):
         self.top_menu_layout.addWidget(self.re_running)
         self.import_text = QPushButton('Import')
         self.top_menu_layout.addWidget(self.import_text)
+        self.configure = QPushButton('Configure')
+        self.top_menu_layout.addWidget(self.configure)
 
     def _create_content(self):
         self.primary_layout = QVBoxLayout()
@@ -63,9 +66,6 @@ class ThesaurusPlusUi(QMainWindow):
         self.input_text.setPlainText(text)
         self.input_text.setFocus()
 
-    def clear_input_text(self):
-        self.set_input_text('')
-
     def get_input_text(self):
         return self.input_text.toPlainText()
 
@@ -77,16 +77,18 @@ class ThesaurusPlusUi(QMainWindow):
         return self.output_text.toPlainText()
 
 
-class PopUpBox(QDialog):
+class PopUpBoxReRun(QDialog):
     def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle('Re-Running options')
+        super().__init__(parent, QtCore.Qt.WindowCloseButtonHint)
+        self.setWindowTitle('Re-Running Options')
+        self.setWindowIcon(QtGui.QIcon('..\\icons\\Phrog.ico'))
+        self.setMinimumWidth(200)
         dlg_layout = QVBoxLayout()
         form_layout = QFormLayout()
 
         # re-run inputs
         self.onlyInt = QIntValidator(1, 100, self)
-        self.number_of_runs = QLineEdit('20')
+        self.number_of_runs = QLineEdit('5')
         self.number_of_runs.setValidator(self.onlyInt)
 
         self.detailed_output = QCheckBox()
@@ -95,11 +97,60 @@ class PopUpBox(QDialog):
         form_layout.addRow('Detailed Output:', self.detailed_output)
         dlg_layout.addLayout(form_layout)
 
-        btns = QDialogButtonBox()
-        btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
-        dlg_layout.addWidget(btns)
+        self.btns = QDialogButtonBox()
+        self.btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+        dlg_layout.addWidget(self.btns)
 
         self.setLayout(dlg_layout)
+
+    def closeEvent(self, *args, **kwargs):
+        self.parent().setEnabled(True)
+        self.close()
+
+    def accepted(self):
+        self.close()
+
+    def rejected(self):
+        self.close()
+
+    def display_dialog(self):
+        self.show()
+
+
+class PopUpBoxConfig(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent, QtCore.Qt.WindowCloseButtonHint)
+        self.setWindowTitle('Configuration')
+        self.setWindowIcon(QtGui.QIcon('..\\icons\\Phrog.ico'))
+        self.setMinimumWidth(200)
+
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(QLabel('Config Saves on Program End'))
+        # TODO show where the file would be if the use wanted to edit it
+        main_layout.addWidget(QLabel('Ignored Words (Separate With Spaces)'))
+        self.input_text = QPlainTextEdit()
+        main_layout.addWidget(self.input_text)
+
+        form_layout = QFormLayout()
+        self.antonym_mode = QCheckBox()
+        form_layout.addRow('Antonym Mode:', self.antonym_mode)
+        main_layout.addLayout(form_layout)
+
+        self.btns = QDialogButtonBox()
+        self.btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+        main_layout.addWidget(self.btns)
+
+        self.setLayout(main_layout)
+
+    def closeEvent(self, *args, **kwargs):
+        self.parent().setEnabled(True)
+        self.close()
+
+    def accepted(self):
+        self.close()
+
+    def rejected(self):
+        self.close()
 
     def display_dialog(self):
         self.show()
@@ -108,10 +159,12 @@ class PopUpBox(QDialog):
 # Create a Controller class to connect the UI
 class PyCalcCtrl:
     def __init__(self, view):
-        """Controller initializer."""
         self._view = view
         # Connect signals and slots
         self._connect_signals()
+        self._ignored_words = "a an the i it as its no in it's"
+        self._synonym_mode = True
+        self._view.dialog_config.input_text.setPlainText(self._ignored_words)
 
     def _import_text(self):
         # open file dialog box, navigation starting at home directory
@@ -126,24 +179,32 @@ class PyCalcCtrl:
 
     def _run_input(self):
         text_input = self._view.get_input_text()
-        output = Sub_Functions.synoantonym_string(text_input, "a an the i it as its no in", True)
+        output = Sub_Functions.synoantonym_string(text_input, self._ignored_words, self._synonym_mode)
         self._view.set_output_text(output)
 
-    def _re_run_input(self):
-
-        # pop up dialog box with 20 as default value (something must be input, thing must be integer number)
-        # run button to run with whatever is in the box
-        # cancel button to exit out of dialog box (does not run)
-
-        self._view.setEnabled(False)
-        self._view.dialog_box.display_dialog()
+    def _on_re_run_accept(self):
         number_of_runs = int(self._view.dialog_box.number_of_runs.text())
         show_intermediate = bool(self._view.dialog_box.detailed_output.checkState())
+        self._view.setEnabled(True)
+        self._view.dialog_box.setEnabled(True)
+        self._view.dialog_box.accepted()
+        self._re_run_action(number_of_runs, show_intermediate)
 
+    def _on_re_run_reject(self):
+        self._view.setEnabled(True)
+        self._view.dialog_box.setEnabled(True)
+        self._view.dialog_box.rejected()
+
+    def _on_re_run_start(self):
+        self._view.setEnabled(False)
+        self._view.dialog_box.setEnabled(True)
+        self._view.dialog_box.display_dialog()
+
+    def _re_run_action(self, number_of_runs, show_intermediate):
         total = ""
         output = self._view.get_input_text()
         for i in range(number_of_runs):
-            output = Sub_Functions.synoantonym_string(output, "a an the i it as its no in", True)
+            output = Sub_Functions.synoantonym_string(output, self._ignored_words, self._synonym_mode)
             if show_intermediate:
                 if i == number_of_runs - 1:
                     total = total + str(i + 1) + ": " + output
@@ -154,15 +215,37 @@ class PyCalcCtrl:
         else:
             self._view.set_output_text(output)
 
+    def _on_config_accept(self):
+        self._ignored_words = self._view.dialog_config.input_text.toPlainText()
+        self._synonym_mode = not bool(self._view.dialog_config.antonym_mode.checkState())
+        self._view.setEnabled(True)
+        self._view.dialog_config.setEnabled(True)
+        self._view.dialog_config.accepted()
 
+    def _on_config_reject(self):
+        self._view.setEnabled(True)
+        self._view.dialog_config.setEnabled(True)
+        self._view.dialog_config.rejected()
 
-    # def _edit_ignored_words
+    def _on_config_start(self):
+        self._view.dialog_config.input_text.setPlainText(self._ignored_words)
+        self._view.dialog_config.antonym_mode.setChecked(not self._synonym_mode)
+        self._view.setEnabled(False)
+        self._view.dialog_config.setEnabled(True)
+        self._view.dialog_config.display_dialog()
 
     def _connect_signals(self):
+        # self.dialog_config
         self._view.run.clicked.connect(partial(self._run_input))
-        # self._view.re_running.clicked.connect(partial(self._re_run_input))
-        self._view.re_running.clicked.connect(partial(self._re_run_input))
+        self._view.re_running.clicked.connect(partial(self._on_re_run_start))
         self._view.import_text.clicked.connect(partial(self._import_text))
+        self._view.configure.clicked.connect(partial(self._on_config_start))
+
+        self._view.dialog_box.btns.accepted.connect(partial(self._on_re_run_accept))
+        self._view.dialog_box.btns.rejected.connect(partial(self._on_re_run_reject))
+
+        self._view.dialog_config.btns.accepted.connect(partial(self._on_config_accept))
+        self._view.dialog_config.btns.rejected.connect(partial(self._on_config_reject))
 
 
 # Client code
