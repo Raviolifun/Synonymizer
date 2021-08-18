@@ -1,2 +1,2 @@
-ignored words = a an the i it as its no in
-antonym mode = false
+ignored words = a an the i it as its no in not
+antonym mode = False

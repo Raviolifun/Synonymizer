@@ -4,7 +4,9 @@ from PyQt5 import QtGui, QtCore
 from functools import partial
 from src.main.python import Sub_Functions
 from pathlib import Path
-
+from os import path
+import os
+import docx
 import sys
 
 __version__ = '1.0'
@@ -37,6 +39,8 @@ class ThesaurusPlusUi(QMainWindow):
         self._create_menu()
         self._create_content()
 
+        self.input_text.setFocus()
+
     def _create_menu(self):
         self.top_menu_layout = QHBoxLayout()
         self._general_layout.addLayout(self.top_menu_layout)
@@ -47,6 +51,8 @@ class ThesaurusPlusUi(QMainWindow):
         self.top_menu_layout.addWidget(self.re_running)
         self.import_text = QPushButton('Import')
         self.top_menu_layout.addWidget(self.import_text)
+        self.export_text = QPushButton('Export')
+        self.top_menu_layout.addWidget(self.export_text)
         self.configure = QPushButton('Configure')
         self.top_menu_layout.addWidget(self.configure)
 
@@ -124,9 +130,10 @@ class PopUpBoxConfig(QDialog):
         self.setWindowIcon(QtGui.QIcon('..\\icons\\Phrog.ico'))
         self.setMinimumWidth(200)
 
+        config_dir = str(Path(__file__).parent.resolve())
+
         main_layout = QVBoxLayout()
-        main_layout.addWidget(QLabel('Config Saves on Program End'))
-        # TODO show where the file would be if the use wanted to edit it
+        main_layout.addWidget(QLabel('Configuration File In: ' + config_dir))
         main_layout.addWidget(QLabel('Ignored Words (Separate With Spaces)'))
         self.input_text = QPlainTextEdit()
         main_layout.addWidget(self.input_text)
@@ -137,7 +144,7 @@ class PopUpBoxConfig(QDialog):
         main_layout.addLayout(form_layout)
 
         self.btns = QDialogButtonBox()
-        self.btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok)
+        self.btns.setStandardButtons(QDialogButtonBox.Cancel | QDialogButtonBox.Ok | QDialogButtonBox.Save)
         main_layout.addWidget(self.btns)
 
         self.setLayout(main_layout)
@@ -157,13 +164,14 @@ class PopUpBoxConfig(QDialog):
 
 
 # Create a Controller class to connect the UI
-class PyCalcCtrl:
+class Controller:
     def __init__(self, view):
         self._view = view
         # Connect signals and slots
         self._connect_signals()
-        self._ignored_words = "a an the i it as its no in it's"
-        self._synonym_mode = True
+        config = load_settings()
+        self._ignored_words = config[0]
+        self._synonym_mode = config[1]
         self._view.dialog_config.input_text.setPlainText(self._ignored_words)
 
     def _import_text(self):
@@ -172,10 +180,43 @@ class PyCalcCtrl:
         file_name = QFileDialog.getOpenFileName(caption='Open Text File', directory=home_dir,
                                                 filter="txt files (*.txt *.docx)")
         file_name = file_name[0]
-        if file_name is not '':
-            with open(file_name, "r") as fh:
-                import_text = fh.read()
-                self._view.set_input_text(import_text)
+
+        extension = os.path.splitext(file_name)[1]
+
+        if "txt" in extension:
+            if file_name:
+                with open(file_name, "r") as fh:
+                    import_text = fh.read()
+                    self._view.set_input_text(import_text)
+        elif "docx" in extension:
+            document = docx.Document(file_name)
+
+            full_text = []
+            for para in document.paragraphs:
+                full_text.append(para.text)
+            full_text = '\n'.join(full_text)
+
+            self._view.set_input_text(full_text)
+
+        self._view.input_text.setFocus()
+
+    def _export_text(self):
+        # export output text navigation starting at home directory
+        home_dir = str(Path.home())
+        file_name = QFileDialog.getSaveFileName(caption='Save Text File', directory=home_dir,
+                                                filter="txt files (*.txt *.docx)")
+        file_name = file_name[0]
+        extension = os.path.splitext(file_name)[1]
+        if "txt" in extension:
+            if file_name:
+                with open(file_name, "w+") as fh:
+                    fh.write(self._view.get_output_text())
+        elif "docx" in extension:
+            document = docx.Document()
+            document.add_paragraph(self._view.get_output_text())
+            document.save(file_name)
+
+        self._view.input_text.setFocus()
 
     def _run_input(self):
         text_input = self._view.get_input_text()
@@ -189,6 +230,7 @@ class PyCalcCtrl:
         self._view.dialog_box.setEnabled(True)
         self._view.dialog_box.accepted()
         self._re_run_action(number_of_runs, show_intermediate)
+        self._view.input_text.setFocus()
 
     def _on_re_run_reject(self):
         self._view.setEnabled(True)
@@ -234,18 +276,63 @@ class PyCalcCtrl:
         self._view.dialog_config.setEnabled(True)
         self._view.dialog_config.display_dialog()
 
+    def _handle_dialog_buttons(self, button):
+        button = button.text()
+        if button in "Save" or button in "OK":
+            self._on_config_accept()
+
+        if button in "Save":
+            save_settings(self._ignored_words, self._synonym_mode)
+
+        if button in "Cancel":
+            self._on_config_reject()
+
+        self._view.input_text.setFocus()
+
     def _connect_signals(self):
         # self.dialog_config
         self._view.run.clicked.connect(partial(self._run_input))
         self._view.re_running.clicked.connect(partial(self._on_re_run_start))
         self._view.import_text.clicked.connect(partial(self._import_text))
+        self._view.export_text.clicked.connect(partial(self._export_text))
         self._view.configure.clicked.connect(partial(self._on_config_start))
 
         self._view.dialog_box.btns.accepted.connect(partial(self._on_re_run_accept))
         self._view.dialog_box.btns.rejected.connect(partial(self._on_re_run_reject))
 
-        self._view.dialog_config.btns.accepted.connect(partial(self._on_config_accept))
-        self._view.dialog_config.btns.rejected.connect(partial(self._on_config_reject))
+        self._view.dialog_config.btns.clicked.connect(partial(self._handle_dialog_buttons))
+
+
+def load_settings():
+    if path.exists("config.txt"):
+        with open("config.txt", "r") as fh:
+            import_text = fh.read()
+            import_text = import_text.split("\n")
+
+            try:
+                ignored_words = import_text[0][import_text[0].find("=") + 1:].strip()
+                antonym_mode = import_text[1][import_text[1].find("=") + 1:].strip()
+                if antonym_mode == 'True':
+                    antonym_mode = False
+                elif antonym_mode == 'False':
+                    antonym_mode = True
+            except ValueError:
+                print("Config File Not Set Up Properly")
+
+            return ignored_words, antonym_mode
+    else:
+        with open("config.txt", "w+") as fh:
+            fh.write("ignored words = a an the i it as its no in test\nantonym mode = False")
+            return "a an the i it as its no in", True
+
+
+def save_settings(ignored_words, antonym_mode):
+    ignored_words = "ignored words = " + ignored_words
+    antonym_mode = "antonym mode = " + str(not antonym_mode)
+    output = ignored_words + "\n" + antonym_mode
+
+    with open("config.txt", "w") as fh:
+        fh.write(output)
 
 
 # Client code
@@ -253,9 +340,6 @@ def main():
     """Main function."""
     # Create an instance of `QApplication`
     app = QApplication(sys.argv)
-
-    # Download or update language toolkit
-    Sub_Functions.download()
 
     # Load qss (qt equivalent of css)
     sshFile = "customLooks.qss"
@@ -267,7 +351,10 @@ def main():
     view.show()
 
     # Create instances of the model and the controller
-    PyCalcCtrl(view)
+    Controller(view)
+
+    # Download or update language toolkit
+    Sub_Functions.download()
 
     # Execute calculator's main loop
     sys.exit(app.exec_())
