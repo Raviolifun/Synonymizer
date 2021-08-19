@@ -13,10 +13,7 @@ I personally love using this to make silly sentences, so the latter is preferred
 There is also an antonym mode where it attempts to find an antonym for every word in the sentence.
 This is typically more successful due to less options being available to choose from.
 
-Works with manual inputs or .txt files. Inclusion of other file types may be considered in the future.
-Additionally, I plan to add a picking mode for how well the synonym matches in context, but this is far down the line.
-
-Current development is going towards a gui interface in qt with fbs as a installer.
+Works with manual inputs, .txt files. or .docx files. Inclusion of other file types may be considered in the future.
 <br/><br/>
 
 #### Lesson's Learned
