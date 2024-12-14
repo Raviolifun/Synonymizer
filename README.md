@@ -1,4 +1,4 @@
-Synonymizer
+Synonymizer/ThesaurusPlus
 ====================
 
 Spice Up Your Sentences, Make Them Incomprehensible!
@@ -34,3 +34,22 @@ If you just want to run the gui, you can also just do "fbs run" in the consol of
 https://doc.qt.io/qt-5/qmlfirststeps.html <br/>
 https://github.com/mherrmann/fbs-tutorial <br/>
 https://nsis.sourceforge.io/Main_Page <br/>
+
+
+#### Useful commands for installing Python 3.6 (needed to run source)
+1. Install Python 3.6 from Python's website
+2. `curl https://bootstrap.pypa.io/pip/3.6/get-pip.py > get-pip.py`
+3. `python get-pip.py` which you may need to run again once your venv is activated
+4. `python -m venv venv`
+5. `pip install -r .\requirements.txt`
+6. Confirm that the program runs with `fbs run`
+7. `fbs freeze --debug`
+8. If you have problems with nltk, refer to this: https://github.com/nltk/nltk/issues/2159
+   1. I had to modify the file name venv/lib/site-packages/PyInstaller/loader/rthooks/pyi_rth__nltk.py
+   2. I had to modify the contents of venv/lib/site-packages/PyInstaller/hooks/hook-nltk.py
+      1. Set Datas = []
+      2. Comment out the for loop
+      3. Leave the rest unchanged
+9. `fbs installer`
+10. You should now have an installer that works!
+11. The first time you run the app, you will need to run as administrator.

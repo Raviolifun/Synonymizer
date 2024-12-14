@@ -1,4 +1,3 @@
-
 # Internal imports
 import random
 
@@ -9,6 +8,7 @@ from nltk.corpus import wordnet
 
 def download():
     nltk.download('popular')
+
 
 def synoantonym_string(string_input, excluded_words, synonym):
     similar = synonym
